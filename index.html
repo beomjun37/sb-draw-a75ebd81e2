@@ -1,0 +1,663 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light only">
+  <meta name="robots" content="noindex">
+  <title>몰래 스케치북 · 채티 27기</title>
+  <link rel="icon" href="assets/stickers/sticker-01.webp">
+  <link rel="stylesheet" href="css/style.css?v=20261016a">
+</head>
+<body>
+
+  <main class="wrap">
+    <span class="chip">🤫 수빈이에게는 비밀</span>
+    <h1 class="serif" style="font-size:30px;margin-top:10px">몰래 스케치북</h1>
+    <p class="muted" style="margin:6px 0 18px">그림 한 장과 한마디를 남겨 주세요. 다른 채티가 남긴 글은 아래에서 바로 볼 수 있고, 내가 쓴 글은 언제든 고치거나 지울 수 있어요. 식이 끝나면 한 권의 스케치북으로 묶어서 수빈이에게 선물합니다.</p>
+
+    <!-- 작성 마감까지 남은 시간 -->
+    <div class="deadline" id="bookBanner">
+      <span class="dl-label">작성 마감</span>
+      <b class="dl-time" id="bookCd">--:--:--</b>
+      <span class="dl-when" id="bookWhen"></span>
+    </div>
+
+    <div id="closedCard" class="card" hidden style="text-align:center;padding:36px 20px;margin-bottom:8px">
+      <img src="assets/stickers/sticker-03.webp" alt="" style="height:90px;width:auto">
+      <h2 class="serif" style="margin:10px 0 6px">스케치북 작성이 마감되었어요</h2>
+      <p class="muted">모아 주신 마음은 한 권의 스케치북으로 묶어서 수빈이에게 전달할게요. 아래에서 다른 채티의 글은 계속 볼 수 있어요.</p>
+    </div>
+
+    <div id="form">
+      <div class="editbar" id="editbar" hidden>
+        <span>✏️ 내 글을 수정하는 중이에요</span>
+        <button class="mini" id="cancelEdit" type="button">수정 취소</button>
+      </div>
+
+      <div class="editbar" id="flbar" hidden>
+        <span>📷 사진을 끌어서 옮기고, 모서리의 ⤡로 크기, ⟳로 회전해요</span>
+        <button class="mini" id="flOk" type="button">✓ 완료</button>
+        <button class="mini danger" id="flDel" type="button">✕ 빼기</button>
+      </div>
+
+      <div class="paper">
+        <!-- 붙인 사진은 아래 층에 두고(다시 고르면 옮기고, 키우고, 돌릴 수 있음), 펜 그림은 투명한 위 층에 그립니다 -->
+        <canvas id="under" width="800" height="600"></canvas>
+        <canvas id="pad" width="800" height="600"></canvas>
+        <!-- 사진을 붙이기 전에 자유롭게 옮기고 크기를 바꾸는 층 -->
+        <div class="floating" id="fl" hidden>
+          <img id="flImg" alt="" draggable="false">
+          <span class="hd rot" id="flRot" title="돌리기">⟳</span>
+          <span class="hd size" id="flSize" title="크기 조절">⤡</span>
+        </div>
+      </div>
+
+      <div class="tools" id="colors"></div>
+      <div class="tools">
+        <button class="tool on" data-mode="pen" type="button">✏️ 펜</button>
+        <button class="tool" data-mode="eraser" type="button">🧽 지우개</button>
+        <button class="tool" data-mode="stamp" type="button">🎀 스티커</button>
+        <button class="tool" id="photoBtn" type="button">📷 사진</button>
+        <button class="tool" data-mode="photo" type="button">✋ 사진 편집</button>
+        <input type="file" id="photoInput" accept="image/*" hidden>
+        <label class="muted" style="font-size:13px">굵기
+          <input type="range" id="size" min="2" max="28" value="6">
+        </label>
+        <button class="tool" id="undo" type="button">↩︎ 되돌리기</button>
+        <button class="tool" id="clear" type="button">전체 지우기</button>
+      </div>
+      <div class="stamps" id="stamps" hidden></div>
+
+      <div class="card" style="margin-top:16px">
+        <label for="name" style="font-weight:700">보내는 사람</label>
+        <input id="name" class="input" maxlength="20" placeholder="이름 또는 별명" style="margin:8px 0 14px" autocomplete="off">
+        <label for="msg" style="font-weight:700">수빈이에게 한마디</label>
+        <textarea id="msg" rows="3" maxlength="120" placeholder="결혼 축하해! 행복하게 살아~" style="margin-top:8px"></textarea>
+        <div class="counter"><span id="len">0</span> / 120</div>
+      </div>
+
+      <div style="margin-top:18px;display:flex;gap:10px;align-items:center">
+        <button class="btn primary" id="send" style="flex:1" type="button">스케치북에 남기기</button>
+      </div>
+      <div class="errbox" id="err" hidden>
+        <p id="errText"></p>
+        <button class="mini" id="dl" type="button">내 그림 파일로 내려받기</button>
+      </div>
+    </div>
+
+    <div id="done" class="card" hidden style="text-align:center;padding:40px 20px">
+      <img src="assets/stickers/sticker-05.webp" alt="" style="height:96px;width:auto">
+      <h2 class="serif" style="margin:10px 0 6px">스케치북에 잘 담았어요</h2>
+      <p class="muted">수빈이에게는 비밀로 해 주세요! 아래 목록에서 내 글을 고치거나 지울 수 있어요.</p>
+      <div style="display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap">
+        <button class="btn" id="again" type="button">한 장 더 남기기</button>
+      </div>
+    </div>
+
+    <section>
+      <div class="gallery-head">
+        <h2 class="serif">모인 스케치북 <span class="muted" style="font-size:16px">(<span id="gcount">0</span>장)</span></h2>
+        <span class="live"><i></i><span id="gstatus">실시간</span></span>
+      </div>
+      <div class="gal" id="gal"></div>
+      <p class="empty" id="empty">아직 아무도 남기지 않았어요. 첫 번째 주인공이 되어 주세요!</p>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/config.js?v=20261016a"></script>
+  <script src="js/api.js?v=20261016a"></script>
+  <script>
+    (function () {
+      const $ = (s) => document.querySelector(s);
+      const cv = $("#pad");
+      const ctx = cv.getContext("2d");
+      const COLORS = ["#2b2623", "#d9777f", "#e8a24d", "#e6cf5a", "#8fa58c", "#5a9bd5", "#9a7fd1", "#ffffff"];
+      const STAMPS = ["💍", "💐", "🥂", "🎀", "💖", "✨", "🌸", "🕊️", "🍀", "🎉", "🤍", "🐰"];
+      let color = COLORS[0], mode = "pen", stamp = STAMPS[0], drawing = false, last = null, dirty = false;
+      let editingId = null;
+      const undoStack = [];
+
+      function paper() { ctx.clearRect(0, 0, cv.width, cv.height); } // 펜 층은 투명하게 두고 흰 종이는 아래 층이 맡습니다
+      paper();
+      ctx.lineCap = "round"; ctx.lineJoin = "round";
+
+      function snap() {
+        undoStack.push(ctx.getImageData(0, 0, cv.width, cv.height));
+        if (undoStack.length > 12) undoStack.shift();
+      }
+      function toast(msg) {
+        const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+        clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 1800);
+      }
+      function pos(e) {
+        const r = cv.getBoundingClientRect();
+        return { x: ((e.clientX - r.left) / r.width) * cv.width, y: ((e.clientY - r.top) / r.height) * cv.height };
+      }
+
+      // ───── 사진 붙이기 ─────
+      // 사진은 먼저 캔버스 위의 별도 층(fl)에 올려서 옮기고, 키우고, 돌린 뒤 '붙이기'로 그림에 확정합니다.
+      // 위치와 크기는 캔버스 내부 좌표(800x600) 기준으로 들고 있어서 화면 크기가 달라도 같은 결과가 나옵니다.
+      const fl = $("#fl"), flImg = $("#flImg");
+      const FRAME = 10; // 사진 둘레의 흰 테두리(폴라로이드 느낌)
+      const under = $("#under"), uctx = under.getContext("2d");
+      const photos = []; // 붙인 사진들(아래 층). { img, src, cx, cy, w, ar, ang }
+      let ph = null;     // 지금 고르고 있는 사진(photos 안의 하나)
+      let flat = false;  // 수정 중 불러온 옛 그림이 펜 층에 통째로 깔려 있으면, 새 사진은 거기에 바로 붙입니다
+      const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+      // 이미 떼어진 포인터에 고정을 걸면 예외가 나므로, 실패해도 동작은 이어지게 감쌉니다.
+      const capture = (el, id) => { try { el.setPointerCapture(id); } catch (e) { /* 고정 없이도 동작합니다 */ } };
+      const sc = () => cv.clientWidth / cv.width;
+
+      function renderFl() {
+        if (!ph) return;
+        const k = sc();
+        fl.style.left = cv.offsetLeft + ph.cx * k + "px";
+        fl.style.top = cv.offsetTop + ph.cy * k + "px";
+        fl.style.width = ph.w * k + "px";
+        fl.style.height = ph.w * ph.ar * k + "px";
+        fl.style.borderWidth = FRAME * k + "px";
+        fl.style.borderStyle = "solid";
+        fl.style.borderColor = "#fff";
+        fl.style.transform = "translate(-50%, -50%) rotate(" + ph.ang + "rad)";
+      }
+      window.addEventListener("resize", renderFl);
+
+      function showFl(on) {
+        fl.hidden = !on;
+        $("#flbar").hidden = !on;
+      }
+
+      // 아래 층 다시 그리기: 흰 종이 위에, 고르고 있지 않은 사진들을 차례로 올립니다.
+      function drawPhoto(c, p) {
+        c.save();
+        c.translate(p.cx, p.cy);
+        c.rotate(p.ang);
+        const w = p.w, h = p.w * p.ar;
+        c.shadowColor = "rgba(60,40,30,.28)"; c.shadowBlur = 10; c.shadowOffsetY = 3;
+        c.fillStyle = "#fff";
+        c.fillRect(-w / 2 - FRAME, -h / 2 - FRAME, w + FRAME * 2, h + FRAME * 2);
+        c.shadowColor = "transparent";
+        c.drawImage(p.img, -w / 2, -h / 2, w, h);
+        c.restore();
+      }
+      function renderUnder() {
+        uctx.fillStyle = "#ffffff"; uctx.fillRect(0, 0, under.width, under.height);
+        photos.forEach((p) => { if (p !== ph) drawPhoto(uctx, p); });
+      }
+      renderUnder();
+
+      // 저장과 내려받기에 쓰는 완성본(아래 층 + 펜 층)
+      function composeTo(c, w, h) {
+        c.drawImage(under, 0, 0, w, h);
+        c.drawImage(cv, 0, 0, w, h);
+      }
+
+      // 전부 비우기(새 글, 전체 지우기, 수정 시작 때)
+      function dropPhotos() { photos.length = 0; ph = null; showFl(false); renderUnder(); }
+      // 고르고 있는 사진 한 장만 빼기
+      function removeSel() {
+        if (!ph) return;
+        photos.splice(photos.indexOf(ph), 1);
+        ph = null; showFl(false); renderUnder();
+      }
+      // 고른 사진을 내려놓기: 위치는 그대로 두고 아래 층에 놓입니다. 다시 '사진 편집'으로 고르면 고칠 수 있습니다.
+      function commitFl() {
+        if (!ph) return;
+        const p = ph;
+        if (flat) {
+          // 옛 그림이 펜 층을 덮고 있어서 아래 층에 두면 가려집니다. 이때는 펜 층에 바로 붙입니다(다시 옮길 수는 없음).
+          snap();
+          drawPhoto(ctx, p);
+          photos.splice(photos.indexOf(p), 1);
+        }
+        ph = null; showFl(false); renderUnder();
+        dirty = true;
+      }
+      function selectPhoto(p) {
+        if (ph && ph !== p) commitFl();
+        ph = p;
+        photos.push(photos.splice(photos.indexOf(p), 1)[0]); // 맨 위로
+        flImg.src = p.src;
+        showFl(true); renderUnder(); renderFl();
+      }
+      // 눌린 자리에 있는 사진(위에 놓인 것부터). 회전된 사진도 맞도록 사진 기준 좌표로 되돌려 확인합니다.
+      function hitPhoto(x, y) {
+        for (let i = photos.length - 1; i >= 0; i--) {
+          const p = photos[i], dx = x - p.cx, dy = y - p.cy, cs = Math.cos(p.ang), sn = Math.sin(p.ang);
+          const lx = dx * cs + dy * sn, ly = -dx * sn + dy * cs;
+          if (Math.abs(lx) <= p.w / 2 + FRAME && Math.abs(ly) <= p.w * p.ar / 2 + FRAME) return p;
+        }
+        return null;
+      }
+
+      $("#photoBtn").addEventListener("click", () => $("#photoInput").click());
+      $("#photoInput").addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        e.target.value = ""; // 같은 사진을 다시 고를 수 있게 비웁니다
+        if (!file) return;
+        if (ph) commitFl(); // 앞서 올린 사진이 있으면 먼저 붙입니다
+        const url = URL.createObjectURL(file);
+        const im = new Image();
+        im.onload = () => {
+          // 큰 사진은 메모리를 아끼려고 긴 쪽 1000px 로 줄여서 씁니다.
+          const k = Math.min(1, 1000 / Math.max(im.naturalWidth, im.naturalHeight));
+          const c = document.createElement("canvas");
+          c.width = Math.round(im.naturalWidth * k); c.height = Math.round(im.naturalHeight * k);
+          c.getContext("2d").drawImage(im, 0, 0, c.width, c.height);
+          URL.revokeObjectURL(url);
+          const ar = c.height / c.width;
+          const long = 340; // 처음에는 캔버스 안에 넉넉히 들어오는 크기로
+          const w = ar <= 1 ? long : long / ar;
+          const src = c.toDataURL("image/jpeg", 0.9);
+          const np = { img: c, src, cx: cv.width / 2, cy: cv.height / 2, w, ar, ang: 0 };
+          photos.push(np);
+          dirty = true;
+          selectPhoto(np);
+          toast("끌어서 옮기고, 모서리로 크기와 회전을 바꿀 수 있어요. 나중에 고치려면 ✋ 사진 편집을 눌러요");
+        };
+        im.onerror = () => { URL.revokeObjectURL(url); toast("이 사진은 불러올 수 없어요. 다른 사진을 골라 주세요"); };
+        im.src = url;
+      });
+      $("#flOk").addEventListener("click", commitFl);
+      $("#flDel").addEventListener("click", removeSel);
+
+      // 옮기기와 두 손가락 확대, 회전
+      const ptrs = new Map();
+      fl.addEventListener("pointerdown", (e) => {
+        if (e.target.closest(".hd")) return;
+        capture(fl, e.pointerId);
+        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        e.preventDefault();
+      });
+      fl.addEventListener("pointermove", (e) => {
+        const p = ptrs.get(e.pointerId);
+        if (!p || !ph) return;
+        const before = [...ptrs.values()].map((q) => ({ x: q.x, y: q.y }));
+        p.x = e.clientX; p.y = e.clientY;
+        const now = [...ptrs.values()];
+        const k = sc();
+        if (now.length === 1) {
+          ph.cx += (now[0].x - before[0].x) / k;
+          ph.cy += (now[0].y - before[0].y) / k;
+        } else {
+          const [a0, b0] = before, [a1, b1] = now;
+          const d0 = Math.hypot(a0.x - b0.x, a0.y - b0.y) || 1, d1 = Math.hypot(a1.x - b1.x, a1.y - b1.y);
+          ph.w = clamp(ph.w * (d1 / d0), 40, 1600);
+          ph.ang += Math.atan2(a1.y - b1.y, a1.x - b1.x) - Math.atan2(a0.y - b0.y, a0.x - b0.x);
+          ph.cx += ((a1.x + b1.x) / 2 - (a0.x + b0.x) / 2) / k;
+          ph.cy += ((a1.y + b1.y) / 2 - (a0.y + b0.y) / 2) / k;
+        }
+        renderFl();
+      });
+      ["pointerup", "pointercancel"].forEach((n) => fl.addEventListener(n, (e) => ptrs.delete(e.pointerId)));
+      // 마우스 휠로 크기 조절(PC)
+      fl.addEventListener("wheel", (e) => {
+        if (!ph) return;
+        e.preventDefault();
+        ph.w = clamp(ph.w * (e.deltaY < 0 ? 1.07 : 0.93), 40, 1600);
+        renderFl();
+      }, { passive: false });
+
+      // 모서리 손잡이: ⤡ 는 크기, ⟳ 는 회전. 중심에서 포인터까지의 거리와 각도로 계산합니다.
+      function handle(el, onMove) {
+        el.addEventListener("pointerdown", (e) => {
+          if (!ph) return;
+          e.preventDefault(); e.stopPropagation();
+          capture(el, e.pointerId);
+          const r = fl.getBoundingClientRect();
+          const c = { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+          const start = { w: ph.w, ang: ph.ang, d: Math.hypot(e.clientX - c.x, e.clientY - c.y) || 1, a: Math.atan2(e.clientY - c.y, e.clientX - c.x) };
+          const move = (ev) => { onMove(ev, c, start); renderFl(); };
+          const up = () => { el.removeEventListener("pointermove", move); el.removeEventListener("pointerup", up); el.removeEventListener("pointercancel", up); };
+          el.addEventListener("pointermove", move); el.addEventListener("pointerup", up); el.addEventListener("pointercancel", up);
+        });
+      }
+      handle($("#flSize"), (ev, c, s) => { ph.w = clamp(s.w * (Math.hypot(ev.clientX - c.x, ev.clientY - c.y) / s.d), 40, 1600); });
+      handle($("#flRot"), (ev, c, s) => { ph.ang = s.ang + (Math.atan2(ev.clientY - c.y, ev.clientX - c.x) - s.a); });
+
+      cv.addEventListener("pointerdown", (e) => {
+        e.preventDefault();
+        // 사진 편집: 눌린 자리의 사진을 골라서 다시 옮기고, 키우고, 돌리게 합니다.
+        if (mode === "photo") {
+          const q = pos(e), hit = hitPhoto(q.x, q.y);
+          if (hit) selectPhoto(hit);
+          else if (ph) commitFl();
+          else toast(photos.length ? "고칠 사진을 눌러 주세요" : "붙인 사진이 아직 없어요");
+          return;
+        }
+        // 사진을 고른 상태에서 캔버스를 누르면, 먼저 사진을 내려놓고 이번 입력은 건너뜁니다.
+        if (ph) { commitFl(); return; }
+        capture(cv, e.pointerId);
+        snap();
+        ctx.globalCompositeOperation = mode === "eraser" ? "destination-out" : "source-over"; // 지우개는 펜 층만 투명하게 지웁니다
+        const p = pos(e);
+        dirty = true;
+        if (mode === "stamp") {
+          if (typeof stamp === "string") {
+            ctx.font = (+$("#size").value * 5 + 36) + "px serif";
+            ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.fillText(stamp, p.x, p.y);
+          } else {
+            // 이미지 스티커: 배경이 투명한 그림이라 그대로 얹고, 긴 쪽을 기준으로 크기를 맞춥니다.
+            const s = +$("#size").value * 12 + 110;
+            const k = s / Math.max(stamp.naturalWidth, stamp.naturalHeight);
+            const dw = stamp.naturalWidth * k, dh = stamp.naturalHeight * k;
+            ctx.drawImage(stamp, p.x - dw / 2, p.y - dh / 2, dw, dh);
+          }
+          return;
+        }
+        drawing = true; last = p;
+        ctx.strokeStyle = mode === "eraser" ? "#000000" : color;
+        ctx.lineWidth = +$("#size").value * (mode === "eraser" ? 2.2 : 1);
+        ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + 0.01, p.y + 0.01); ctx.stroke();
+      });
+      cv.addEventListener("pointermove", (e) => {
+        if (!drawing) return;
+        const p = pos(e);
+        ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+        last = p;
+      });
+      ["pointerup", "pointercancel"].forEach((ev) => cv.addEventListener(ev, () => (drawing = false)));
+
+      COLORS.forEach((c, i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "swatch" + (i === 0 ? " on" : "");
+        b.style.background = c; b.setAttribute("aria-label", "색상 " + c);
+        b.addEventListener("click", () => {
+          color = c; if (mode === "eraser") setMode("pen");
+          document.querySelectorAll(".swatch").forEach((s) => s.classList.remove("on")); b.classList.add("on");
+        });
+        $("#colors").append(b);
+      });
+
+      // 그림 스티커: 파일이 있는 것만 나타납니다(assets/stickers/sticker-01.webp ~ 06.webp).
+      for (let n = 1; n <= 6; n++) {
+        const src = "assets/stickers/sticker-0" + n + ".webp";
+        const b = document.createElement("button");
+        b.type = "button"; b.className = "stamp"; b.hidden = true;
+        const im = new Image();
+        im.alt = "스티커 " + n;
+        im.onload = () => { b.hidden = false; };
+        im.src = src;
+        b.append(im);
+        b.addEventListener("click", () => {
+          stamp = im; document.querySelectorAll(".stamp").forEach((x) => x.classList.remove("on")); b.classList.add("on");
+        });
+        $("#stamps").append(b);
+      }
+
+      STAMPS.forEach((s, i) => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "stamp" + (i === 0 ? " on" : ""); b.textContent = s;
+        b.addEventListener("click", () => {
+          stamp = s; document.querySelectorAll(".stamp").forEach((x) => x.classList.remove("on")); b.classList.add("on");
+        });
+        $("#stamps").append(b);
+      });
+
+      function setMode(m) {
+        mode = m;
+        document.querySelectorAll("[data-mode]").forEach((b) => b.classList.toggle("on", b.dataset.mode === m));
+        $("#stamps").hidden = m !== "stamp";
+      }
+      document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => setMode(b.dataset.mode)));
+      $("#undo").addEventListener("click", () => { const s = undoStack.pop(); if (s) ctx.putImageData(s, 0, 0); });
+      $("#clear").addEventListener("click", () => { dropPhotos(); snap(); paper(); flat = false; dirty = false; });
+
+      const nameEl = $("#name"), msgEl = $("#msg"), sendBtn = $("#send");
+      // 브라우저 설정에 따라 localStorage 접근이 막혀도 페이지가 멈추지 않도록 감쌉니다.
+      const safeGet = (k) => { try { return localStorage.getItem(k) || ""; } catch (e) { return ""; } };
+      const safeSet = (k, v) => { try { localStorage.setItem(k, v); } catch (e) { /* 이름 기억만 못 할 뿐입니다 */ } };
+      nameEl.value = safeGet("subin.name");
+
+      // ───── 작성 마감 ─────
+      const closeAt = CONFIG.BOOK_CLOSE ? new Date(CONFIG.BOOK_CLOSE) : null;
+      const isClosed = () => !!closeAt && new Date() > closeAt;
+
+      // 보낼 그림을 크기 한도(글자 수) 아래가 될 때까지 해상도와 화질을 단계적으로 낮춰서 만듭니다.
+      // WebP 를 지원하는 브라우저(Chrome, Edge 등)는 같은 화질에서 JPEG 보다 훨씬 작아서 사진이 들어간 그림도 덜 뭉개집니다.
+      const FORMAT = (() => {
+        try { return document.createElement("canvas").toDataURL("image/webp").startsWith("data:image/webp") ? "image/webp" : "image/jpeg"; }
+        catch (e) { return "image/jpeg"; }
+      })();
+      function exportImage(maxLen) {
+        // 앞의 세 단계는 나눠 올릴 때(한도가 큰 경우)만 쓰이는 고화질입니다.
+        const steps = [[800, 600, .92], [800, 600, .85], [800, 600, .75], [800, 600, .8], [800, 600, .65], [800, 600, .5], [640, 480, .65], [640, 480, .55], [560, 420, .55],
+                       [560, 420, .45], [480, 360, .45], [400, 300, .4], [320, 240, .35]];
+        const off = document.createElement("canvas");
+        const octx = off.getContext("2d");
+        let url = "";
+        for (const [w, h, q] of steps) {
+          off.width = w; off.height = h;
+          octx.imageSmoothingQuality = "high";
+          octx.fillStyle = "#fff"; octx.fillRect(0, 0, w, h);
+          composeTo(octx, w, h);
+          url = off.toDataURL(FORMAT, q);
+          if (url.length <= maxLen) return url;
+        }
+        return url;
+      }
+      msgEl.addEventListener("input", () => ($("#len").textContent = msgEl.value.length));
+
+      function resetForm() {
+        dropPhotos(); flat = false;
+        paper(); undoStack.length = 0; dirty = false; msgEl.value = ""; $("#len").textContent = 0;
+      }
+      function endEdit() {
+        editingId = null;
+        $("#editbar").hidden = true;
+        sendBtn.textContent = "스케치북에 남기기";
+        resetForm();
+      }
+
+      sendBtn.addEventListener("click", async () => {
+        if (isClosed()) { toast("스케치북 작성이 마감되었어요"); return; }
+        const name = nameEl.value.trim(), message = msgEl.value.trim();
+        if (ph) commitFl(); // 아직 붙이지 않은 사진이 있으면 지금 위치 그대로 붙입니다
+        if (!name) { toast("이름을 입력해 주세요"); nameEl.focus(); return; }
+        if (!message && !dirty) { toast("그림이나 한마디를 남겨 주세요"); return; }
+        // 서버 앞단의 보안 장비가 약 50KB 를 넘는 요청을 막습니다(403).
+        // 1순위: 그림을 선명하게(최대 30만 자) 만들어 36KB 조각으로 나눠 올립니다. 조각 하나하나는 한도 아래입니다.
+        // 2순위: 나눠 올리지 못하면(서버 설정 전, 연결 문제 등) 그림을 4만 4천 자 아래로 줄여서 한 번에 올립니다.
+        // 그것도 막히면 더 작게 줄여서 다시 시도합니다.
+        const DIRECT_MAX = 44000;
+        const LIMITS = [300000, 44000, 30000, 18000];
+        const ids = API.newIds(); // 재시도해도 같은 글로 취급되도록 한 번만 만듭니다
+        sendBtn.disabled = true; sendBtn.textContent = "담는 중…";
+        hideErr();
+        safeSet("subin.name", name);
+        let lastErr = null, saved = false;
+        for (const limit of LIMITS) {
+          const image = dirty ? exportImage(limit) : null;
+          const chunked = !!image && image.length > DIRECT_MAX && API.mode === "supabase";
+          if (chunked) sendBtn.textContent = "선명하게 올리는 중…";
+          const payload = { ...ids, name, message, image, chunked };
+          try {
+            if (editingId) {
+              await API.updateSketch(editingId, payload);
+              toast("수정했어요");
+              endEdit();
+            } else {
+              await API.addSketch(payload);
+              $("#form").hidden = true; $("#done").hidden = false; window.scrollTo(0, 0);
+            }
+            saved = true;
+            refresh();
+            break;
+          } catch (e) {
+            lastErr = e; console.error(e);
+            // 나눠 올리기가 실패한 경우에는 이유와 상관없이 줄여서 올리는 방법으로 넘어갑니다.
+            const sizeOrNetwork = chunked || e.status === 403 || e.status === 413 || !e.status; // 크기 때문에 막혔거나 연결이 끊긴 경우
+            if (!dirty || !sizeOrNetwork) break;
+            sendBtn.textContent = "담는 중…";
+          }
+        }
+        if (!saved) showErr(lastErr);
+        sendBtn.disabled = false;
+        sendBtn.textContent = editingId ? "수정 내용 저장" : "스케치북에 남기기";
+      });
+
+      // 오류 안내: 잠깐 떴다 사라지는 알림 대신 화면에 남겨서, 무엇이 문제인지 알 수 있게 합니다.
+      function showErr(e) {
+        let why;
+        if (e && e.status === 403) why = "회사 네트워크의 보안 설정이 용량이 큰 전송을 막았어요.";
+        else if (e && !e.status) why = "서버에 연결하지 못했어요. 사내 PC나 VPN에 연결되어 있는지 확인해 주세요.";
+        else why = "저장하지 못했어요 (오류 " + (e && e.status) + ").";
+        $("#errText").textContent = why + " 작성한 그림과 글은 지워지지 않았어요. 다시 눌러 보시고, 계속 안 되면 아래 버튼으로 그림을 내려받아 전달해 주세요.";
+        $("#err").hidden = false;
+      }
+      function hideErr() { $("#err").hidden = true; }
+      $("#dl").addEventListener("click", () => {
+        const a = document.createElement("a");
+        const out = document.createElement("canvas");
+        out.width = cv.width; out.height = cv.height;
+        composeTo(out.getContext("2d"), out.width, out.height);
+        a.href = out.toDataURL("image/png");
+        a.download = "스케치북_" + (nameEl.value.trim() || "그림") + ".png";
+        a.click();
+      });
+
+      $("#again").addEventListener("click", () => {
+        resetForm(); $("#done").hidden = true; $("#form").hidden = false;
+      });
+      $("#cancelEdit").addEventListener("click", endEdit);
+
+      // ───── 수정 시작: 기존 그림과 글을 편집 화면에 불러옵니다 ─────
+      async function startEdit(r) {
+        await API.loadImages([r]);
+        editingId = r.id;
+        nameEl.value = r.name; msgEl.value = r.message; $("#len").textContent = r.message.length;
+        dropPhotos(); flat = false;
+        paper(); undoStack.length = 0; dirty = false;
+        const data = API.imageOf(r.id);
+        if (data) {
+          const im = new Image();
+          await new Promise((res) => { im.onload = res; im.onerror = res; im.src = data; });
+          ctx.globalCompositeOperation = "source-over";
+          ctx.drawImage(im, 0, 0, cv.width, cv.height);
+          flat = true;
+          dirty = true;
+        }
+        $("#done").hidden = true; $("#form").hidden = false;
+        $("#editbar").hidden = false;
+        sendBtn.textContent = "수정 내용 저장";
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+
+      // ───── 실시간 갤러리 ─────
+      const gal = $("#gal");
+      const cards = new Map(); // id -> { el, sig }
+      let latest = [];
+
+      function setThumb(el, r) {
+        const thumb = el.querySelector(".thumb");
+        if (thumb.dataset.sig === r.updated_at) return;
+        const data = API.imageOf(r.id);
+        if (data === undefined) return;
+        thumb.dataset.sig = r.updated_at;
+        if (data) {
+          const im = new Image();
+          im.alt = r.name + "의 그림"; im.src = data;
+          thumb.replaceChildren(im);
+        } else {
+          thumb.textContent = "✍️ 한마디만 남겼어요";
+        }
+      }
+
+      function buildCard(r) {
+        const el = document.createElement("article");
+        const mine = API.isMine(r.id) && !isClosed(); // 마감 후에는 수정, 삭제 버튼을 보여주지 않습니다
+        el.className = "gcard" + (mine ? " mine" : "");
+        const thumb = document.createElement("div");
+        thumb.className = "thumb"; thumb.textContent = "그림 불러오는 중…";
+        const body = document.createElement("div");
+        body.className = "body";
+        if (r.message) {
+          const m = document.createElement("div"); m.className = "gmsg"; m.textContent = r.message; body.append(m);
+        }
+        const by = document.createElement("div"); by.className = "gby"; by.textContent = "- " + r.name;
+        if (mine) { const b = document.createElement("span"); b.className = "badge-me"; b.textContent = "내 글"; by.append(b); }
+        body.append(by);
+        if (mine) {
+          const acts = document.createElement("div"); acts.className = "acts";
+          const ed = document.createElement("button"); ed.type = "button"; ed.className = "mini"; ed.textContent = "수정";
+          ed.addEventListener("click", () => startEdit(r));
+          const del = document.createElement("button"); del.type = "button"; del.className = "mini danger"; del.textContent = "삭제";
+          del.addEventListener("click", async () => {
+            if (!confirm("이 글을 삭제할까요? 되돌릴 수 없어요.")) return;
+            try { await API.deleteSketch(r.id); toast("삭제했어요"); if (editingId === r.id) endEdit(); refresh(); }
+            catch (e) { console.error(e); toast("삭제에 실패했어요"); }
+          });
+          acts.append(ed, del); body.append(acts);
+        }
+        el.append(thumb, body);
+        return el;
+      }
+
+      function syncGallery(rows) {
+        latest = rows;
+        $("#gcount").textContent = rows.length;
+        $("#empty").hidden = rows.length > 0;
+        const seen = new Set();
+        rows.forEach((r) => {
+          seen.add(r.id);
+          const c = cards.get(r.id);
+          if (c && c.sig === r.updated_at) return;
+          const el = buildCard(r);
+          if (c) c.el.replaceWith(el); else gal.prepend(el); // 새 글이 맨 앞에 오도록
+          cards.set(r.id, { el, sig: r.updated_at });
+        });
+        cards.forEach((c, id) => { if (!seen.has(id)) { c.el.remove(); cards.delete(id); } });
+
+        API.loadImages(rows).then(() => rows.forEach((r) => { const c = cards.get(r.id); if (c) setThumb(c.el, r); }));
+      }
+
+      function refresh() { API.listSketchMeta().then(syncGallery).catch(console.warn); }
+
+      $("#gstatus").textContent = API.mode === "supabase" ? "실시간" : "로컬 미리보기";
+      // 마감까지 남은 시간을 1초마다 갱신하고, 마감되는 순간 작성 화면을 닫습니다.
+      const pad = (n) => String(n).padStart(2, "0");
+      let wasClosed = false;
+      function tickBook() {
+        const banner = $("#bookBanner");
+        if (!closeAt) { banner.hidden = true; return; }
+        const ms = closeAt - new Date();
+        $("#bookWhen").textContent = closeAt.toLocaleString("ko-KR", { month: "numeric", day: "numeric", weekday: "short", hour: "numeric", minute: "2-digit" });
+        const cd = $("#bookCd");
+        if (ms <= 0) {
+          cd.textContent = "마감되었어요";
+          cd.classList.remove("urgent");
+          banner.classList.add("closed");
+        } else {
+          const s = Math.floor(ms / 1000);
+          const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60);
+          cd.textContent = (d ? d + "일 " : "") + pad(h) + ":" + pad(m) + ":" + pad(s % 60);
+          cd.classList.toggle("urgent", ms < 3600 * 1000); // 마지막 1시간은 강조
+        }
+        if (isClosed() && !wasClosed) {
+          wasClosed = true;
+          dropPhotos();
+          editingId = null;
+          $("#editbar").hidden = true;
+          $("#form").hidden = true;
+          $("#done").hidden = true;
+          $("#closedCard").hidden = false;
+          // 수정, 삭제 버튼이 달린 카드를 버튼 없이 다시 만듭니다.
+          cards.forEach((c) => c.el.remove());
+          cards.clear();
+          syncGallery(latest);
+        }
+      }
+      tickBook();
+      setInterval(tickBook, 1000);
+
+      API.watch(() => API.listSketchMeta(), syncGallery, 3000);
+    })();
+  </script>
+</body>
+</html>
